@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+
+require "HTTParty"
+require "json"
+
+def usage_doc
+  return "usage: sat-predict <NORAD_ID> <latitude> <longitude>\n"\
+    "  NORAD_ID: NORAD id\n"\
+    "  latitude: Observer's latitide (decimal degrees format)\n"\
+    "  longitude: Observer's longitude (decimal degrees format)\n"
+end
+
+if ARGV[0] == "-h" || ARGV[0] == "--help"
+  puts usage_doc
+  exit 0
+end
+
+if ARGV[1] && !ARGV[2]
+  puts "ERROR: You must include latitude AND longitude"
+  puts usage_doc
+  exit 1
+end
+
+norad_id = ARGV[0] || "33591"
+latitude = ARGV[1] || "40.7128"
+longitude = ARGV[2] || "-74.0060"
+
+base_url = "https://www.n2yo.com/rest/v1/satellite"
+request_path = "radiopasses"
+api_key = "778WCQ-SKT2HC-Q2MRH4-3XLM"
+altitude = "30"
+no_of_days = "2"
+min_elevation = "10"
+
+request = "#{base_url}/#{request_path}/#{norad_id}/#{latitude}/#{longitude}/#{altitude}/#{no_of_days}/#{min_elevation}?apiKey=#{api_key}"
+
+response = HTTParty.get(request, format: :plain)
+parsed_response = JSON.parse(response, symbolize_names: true)
+
+puts "#{latitude}°N #{longitude}°E"
+puts parsed_response[:info][:satname]
+
+parsed_response[:passes].each do |pass|
+  puts "Local Start: #{Time.at(pass[:startUTC])}"
+end
